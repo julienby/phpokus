@@ -1,4 +1,8 @@
 <?php
+namespace App\Controllers;
+
+use Core\Database;
+use Core\Config;
 
 class HomeController {
     public function index() {
