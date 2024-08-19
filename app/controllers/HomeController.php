@@ -6,6 +6,12 @@ use Core\Config;
 
 class HomeController {
     public function index() {
+
+    public function __construct() {
+        $dbConfig = Config::getInstance()->get('database');
+        $db = new Database($dbConfig);
+    }
+        
         // Charger la vue de la page d'accueil
         require_once '../app/views/header.php';
         require_once '../app/views/home.php';  // Créez cette vue si elle n'existe pas
