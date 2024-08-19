@@ -1,9 +1,15 @@
 <?php
 
+namespace Core;
+
 class Router {
     private $routes = [];
 
     public function __construct() {
+        $this->loadRoutes();
+    }
+
+    private function loadRoutes() {
         $this->routes = require '../config/routes.php';
     }
 
@@ -11,43 +17,43 @@ class Router {
         $url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '/';
         $url = filter_var($url, FILTER_SANITIZE_URL);
 
-        echo "URL requested: " . $url . "<br>";
+        if ($url !== '/' && strpos($url, '/') !== 0) {
+            $url = '/' . $url;
+        }
+
+        $routeFound = false;
 
         foreach ($this->routes as $route => $controllerAction) {
-            // Si la route est '/', on la fait correspondre explicitement
-            if ($route === '/') {
-                $pattern = '#^/$#';
-            } else {
-                $pattern = preg_replace('#\{[a-zA-Z]+\}#', '([a-zA-Z0-9-_]+)', $route);
-                $pattern = '#^' . rtrim($pattern, '/') . '$#';
-            }
-
-            echo "Checking route: " . $route . " against pattern: " . $pattern . "<br>";
+            // Remplace les paramètres dynamiques {param} par des expressions régulières
+            $pattern = preg_replace('#\{[a-zA-Z0-9_]+\}#', '([a-zA-Z0-9_-]+)', $route);
+            $pattern = '#^' . rtrim($pattern, '/') . '$#';
 
             if (preg_match($pattern, $url, $matches)) {
-                array_shift($matches);
-                list($controller, $method) = explode('@', $controllerAction);
+                array_shift($matches); // Supprime la correspondance complète
 
-                echo "Route matched! Controller: " . $controller . ", Method: " . $method . "<br>";
+                list($controllerName, $methodName) = explode('@', $controllerAction);
+                $controllerPath = '../app/controllers/' . $controllerName . '.php';
 
-                if (file_exists('../app/controllers/' . $controller . '.php')) {
-                    require_once '../app/controllers/' . $controller . '.php';
-                    $controllerObject = new $controller();
+                if (file_exists($controllerPath)) {
+                    require_once $controllerPath;
+                    $controllerClass = "App\\Controllers\\" . $controllerName;
+                    $controllerObject = new $controllerClass();
 
-                    if (method_exists($controllerObject, $method)) {
-                        call_user_func_array([$controllerObject, $method], $matches);
-                        return;
+                    if (method_exists($controllerObject, $methodName)) {
+                        call_user_func_array([$controllerObject, $methodName], $matches);
+                        $routeFound = true;
+                        break;
                     } else {
-                        echo "Method $method not found!";
-                        return;
+                        echo "Method $methodName not found!";
                     }
                 } else {
-                    echo "Controller $controller not found!";
-                    return;
+                    echo "Controller $controllerName not found!";
                 }
             }
         }
 
-        echo "No route matched.";
+        if (!$routeFound) {
+            echo "No route matched.";
+        }
     }
 }
