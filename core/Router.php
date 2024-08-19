@@ -25,8 +25,15 @@ class Router {
 
         foreach ($this->routes as $route => $controllerAction) {
             // Remplace les paramètres dynamiques {param} par des expressions régulières
-            $pattern = preg_replace('#\{[a-zA-Z0-9_]+\}#', '([a-zA-Z0-9_-]+)', $route);
-            $pattern = '#^' . rtrim($pattern, '/') . '$#';
+            //$pattern = preg_replace('#\{[a-zA-Z0-9_]+\}#', '([a-zA-Z0-9_-]+)', $route);
+            //$pattern = '#^' . rtrim($pattern, '/') . '$#';
+            if ($route === '/') {
+                $pattern = '#^/$#';
+            } else {
+                $pattern = preg_replace('#\{[a-zA-Z]+\}#', '([a-zA-Z0-9-_]+)', $route);
+                $pattern = '#^' . rtrim($pattern, '/') . '$#';
+            }
+            
 
             if (preg_match($pattern, $url, $matches)) {
                 array_shift($matches); // Supprime la correspondance complète
